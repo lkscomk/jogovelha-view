@@ -243,6 +243,9 @@
               </v-btn>
               {{ formulario.idAdversario ? `${formulario.idAdversario} - ${formulario.nomeAdversario}` : null }}
               </v-col>
+              <v-col v-if="$vuetify.breakpoint.width < 500" cols="12" class="text-caption">
+                Clique para copiar o código abaixo e envie para o outro jogador!
+              </v-col>
               <v-col cols="12">
                 <v-tooltip class="pa-0 ma-0" bottom>
                   <template v-slot:activator="{ on, attrs }">
