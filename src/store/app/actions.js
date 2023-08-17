@@ -1,5 +1,24 @@
 import axios from '@/plugins/axios'
 
+export const avisarSair = async ({ commit }, id) => {
+  try {
+    const res = await axios.get('/avisar-sair')
+
+    return res.data
+  } catch (error) {
+    return null
+  }
+}
+export const atualSituacao = async ({ commit }, id) => {
+  try {
+    const res = await axios.post('/atual-situacao', id)
+
+    return res.data
+  } catch (error) {
+    return null
+  }
+}
+
 export const removerJogador = async ({ commit }, dados) => {
   try {
     const res = await axios.post('/remover-jogador', dados)
@@ -38,6 +57,11 @@ export const entrarSala = async ({ commit }, dados) => {
 
     localStorage.setItem('id', res.data.id)
     localStorage.setItem('jogadorId', res.data.jogadorId)
+    localStorage.setItem('nome', res.data.nome)
+    localStorage.setItem('atualVez', res.data.atualVez)
+    localStorage.setItem('idAdversario', res.data.idAdversario)
+    localStorage.setItem('nomeAdversario', res.data.nomeAdversario)
+    localStorage.setItem('simbolo', res.data.simbolo)
 
     return res.data
   } catch (error) {

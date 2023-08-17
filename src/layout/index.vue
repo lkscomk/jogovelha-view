@@ -48,6 +48,13 @@
       </div> -->
       <v-btn
         text
+        dark
+        @click="sairPartida()"
+      >
+        sair do jogo
+      </v-btn>
+      <v-btn
+        text
         @click="alterarTema()"
       >
         <v-icon
@@ -126,6 +133,7 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex'
 export default {
   name: 'LayoutSistema',
 
@@ -135,6 +143,9 @@ export default {
   }),
 
   methods: {
+    ...mapActions('app', [
+      'avisarSair'
+    ]),
     alterarTema () {
       this.$vuetify.theme.dark = !this.$vuetify.theme.dark
       localStorage.setItem(
@@ -156,6 +167,21 @@ export default {
       if (url) {
         this.$router.push(route.href)
       }
+    },
+    async sairPartida () {
+      await this.avisarSair()
+      window.localStorage.removeItem('id')
+      window.localStorage.removeItem('jogadorId')
+      window.localStorage.removeItem('idAdversario')
+      window.localStorage.removeItem('portifolio/tema')
+      window.localStorage.removeItem('nome')
+      window.localStorage.removeItem('nomeAdversario')
+      window.localStorage.removeItem('atualVez')
+      window.localStorage.removeItem('simbolo')
+      this.$notificacao('Desconectado da sala com sucesso', 'atencao')
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
     }
   }
 }
