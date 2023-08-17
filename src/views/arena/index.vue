@@ -243,6 +243,9 @@
               </v-btn>
               {{ formulario.idAdversario ? `${formulario.idAdversario} - ${formulario.nomeAdversario}` : null }}
               </v-col>
+              <v-col v-if="$vuetify.breakpoint.width < 500" cols="12" class="text-caption">
+                Clique para copiar o código abaixo e envie para o outro jogador!
+              </v-col>
               <v-col cols="12">
                 <v-tooltip class="pa-0 ma-0" bottom>
                   <template v-slot:activator="{ on, attrs }">
@@ -385,14 +388,16 @@ export default {
       this.formulario.id = this.$route.query.sala
       this.$router.replace({ path: this.$route.path })
     }
-    this.modal = true
+    if (window.localStorage.getItem('id')) this.reconectar()
+    else this.modal = true
   },
   methods: {
     ...mapActions('app', [
       'criarSala',
       'criarJogador',
       'entrarSala',
-      'removerJogador'
+      'removerJogador',
+      'atualSituacao'
     ]),
     conectar () {
       this.socket = io('wss://websocket-jogovelha.lukasrocha.repl.co')
@@ -409,8 +414,7 @@ export default {
       })
 
       this.socket.on('jogadorSaiu', (msg) => {
-        window.console.log('jogadorSaiu', this.formulario.id)
-        if (this.formulario.id) this.removerJogadorRegistro()
+        this.removerJogadorRegistro()
       })
 
       this.socket.on('zerarJogo', (msg) => {
@@ -456,6 +460,9 @@ export default {
           }
         }
       })
+    },
+    async verificarSituacao (id) {
+      this.atualSituacao({ partidaId: id })
     },
     async jogarPartidaRegistro (jogo) {
       this.socket.emit('jogarPartida', { ...this.formulario, jogo })
@@ -515,6 +522,31 @@ export default {
         }
         this.loading = false
       }
+    },
+    async reconectar () {
+      const res = await this.atualSituacao({
+        partidaId: window.localStorage.getItem('id'),
+        jogadorId: window.localStorage.getItem('jogadorId')
+      })
+
+      if (res && !res.erro) {
+        this.formulario = {
+          id: res.id,
+          jogadorId: res.jogadorId,
+          simbolo: res.simbolo,
+          nome: res.nome,
+          nomeAdversario: res.nomeAdversario,
+          idAdversario: res.idAdversario,
+          atualVez: res.atualVez
+        }
+        this.matriz = [
+          [{ id: 1, simbolo: res.jogos[0] }, { id: 2, simbolo: res.jogos[1] }, { id: 3, simbolo: res.jogos[2] }],
+          [{ id: 4, simbolo: res.jogos[3] }, { id: 5, simbolo: res.jogos[4] }, { id: 6, simbolo: res.jogos[5] }],
+          [{ id: 7, simbolo: res.jogos[6] }, { id: 8, simbolo: res.jogos[7] }, { id: 9, simbolo: res.jogos[8] }]
+        ]
+        this.conectar()
+      }
+      this.modal = false
     },
     copiarTexto (item) {
       this.$copyText('https://jogovelha.lukasrocha.repl.co' + '?sala=' + item)
