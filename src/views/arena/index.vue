@@ -129,6 +129,14 @@
           <v-spacer></v-spacer>
           <v-btn
             color="green darken-1"
+            small
+            text
+            @click="jogoContraMaquina = true, criarSalaRegistroContraComputador()"
+          >
+            Jogar Contra Maquina
+          </v-btn>
+          <v-btn
+            color="green darken-1"
             text
             @click="salaExistente ? entrarSalaRegistro() : criarSalaRegistro()"
           >
@@ -308,7 +316,8 @@
             :key="e"
             cols="4"
           >
-            <v-card outlined class="d-flex justify-center aling-center" height="200" width="100%" @click="formulario.idAdversario && formulario.jogadorId && formulario.atualVez === formulario.jogadorId ? jogarPartidaRegistro(colunas.id) : null">
+            <v-card outlined class="d-flex justify-center aling-center" height="200" width="100%"
+              @click="formulario.idAdversario && formulario.jogadorId && formulario.atualVez === formulario.jogadorId ? jogarPartidaRegistro(colunas.id) : null">
               <v-icon
                 size="150"
                 :color="colunas.simbolo === formulario.simbolo ? 'purple' : 'green'"
@@ -341,6 +350,7 @@ export default {
     ],
     rules: [v => v >= 25 || 'Mínimo de 25 caracteres.'],
     modal: false,
+    jogoContraMaquina: false,
     formularioNovamente: {
       modalNovamente: false,
       corNovamente: 'primary',
@@ -397,7 +407,8 @@ export default {
       'criarJogador',
       'entrarSala',
       'removerJogador',
-      'atualSituacao'
+      'atualSituacao',
+      'jogarContraComputador'
     ]),
     conectar () {
       this.socket = io('wss://websocket-jogovelha.lukasrocha.repl.co')
@@ -465,7 +476,33 @@ export default {
       this.atualSituacao({ partidaId: id })
     },
     async jogarPartidaRegistro (jogo) {
-      this.socket.emit('jogarPartida', { ...this.formulario, jogo })
+      if (!this.jogoContraMaquina) this.socket.emit('jogarPartida', { ...this.formulario, jogo })
+      else {
+        const msg = await this.jogarContraComputador({ ...this.formulario, jogo })
+        this.formulario.atualVez = msg.atualVez
+        this.matriz = [
+          [{ id: 1, simbolo: msg.jogo[0] }, { id: 2, simbolo: msg.jogo[1] }, { id: 3, simbolo: msg.jogo[2] }],
+          [{ id: 4, simbolo: msg.jogo[3] }, { id: 5, simbolo: msg.jogo[4] }, { id: 6, simbolo: msg.jogo[5] }],
+          [{ id: 7, simbolo: msg.jogo[6] }, { id: 8, simbolo: msg.jogo[7] }, { id: 9, simbolo: msg.jogo[8] }]
+        ]
+        if (msg && msg.vencedor) {
+          if (msg.vencedor !== 'empate') {
+            this.formularioFim = {
+              modalFim: true,
+              corFim: msg.vencedor === this.formulario.jogadorId ? 'green' : 'red',
+              tituloFim: msg.vencedor === this.formulario.jogadorId ? 'Campeão!' : 'Não foi dessa vez',
+              mensagemFim: msg.vencedor === this.formulario.jogadorId ? 'Parabéns você venceu!' : 'Ah, infelizmente você perdeu, mas não fique triste, você pode jogar novamente'
+            }
+          } else if (msg.vencedor === 'empate') {
+            this.formularioFim = {
+              modalFim: true,
+              corFim: 'orange',
+              tituloFim: 'Empate!',
+              mensagemFim: 'Ah, infelizmente você empatou, mas não fique triste, você pode jogar novamente'
+            }
+          }
+        }
+      }
     },
     async zerarJogoRegistro () {
       this.socket.emit('zerarJogo', { partidaId: this.formulario.id, atualVez: this.formulario.jogadorId })
@@ -487,6 +524,36 @@ export default {
             this.formulario.jogadorId = resDois.jogadorId
             this.modal = false
             this.conectar()
+          }
+        }
+        this.loading = false
+      }
+    },
+    async criarSalaRegistroContraComputador () {
+      if (await this.$refs.criarObserve.validate()) {
+        this.loading = true
+        this.modal = false
+        const res = await this.criarSala()
+        if (res) {
+          this.formulario.id = res.id
+          const resDois = await this.criarJogador({
+            partidaId: res.id,
+            nome: this.formulario.nome,
+            simbolo: this.formulario.simbolo
+          })
+          if (resDois) {
+            this.formulario.atualVez = resDois.jogadorId
+            this.formulario.jogadorId = resDois.jogadorId
+            this.modal = false
+            const resTres = await this.criarJogador({
+              partidaId: res.id,
+              nome: 'COMPUTADOR',
+              simbolo: this.formulario.simbolo === 'x' ? 'o' : 'x'
+            })
+            if (resTres) {
+              this.formulario.nomeAdversario = 'COMPUTADOR'
+              this.formulario.idAdversario = resTres.jogadorId
+            }
           }
         }
         this.loading = false

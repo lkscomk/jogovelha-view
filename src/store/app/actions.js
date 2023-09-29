@@ -18,6 +18,15 @@ export const atualSituacao = async ({ commit }, id) => {
     return null
   }
 }
+export const jogarContraComputador = async ({ commit }, dados) => {
+  try {
+    const res = await axios.post('/jogar-computador', dados)
+
+    return res.data
+  } catch (error) {
+    return null
+  }
+}
 
 export const removerJogador = async ({ commit }, dados) => {
   try {
